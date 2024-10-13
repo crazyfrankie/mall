@@ -11,14 +11,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"mall/ioc"
 )
 
 func main() {
+	initViper()
+
 	router := ioc.InitGin()
 
 	server := &http.Server{
-		Addr:    "0.0.0.0:9090",
+		Addr:    "0.0.0.0:9000",
 		Handler: router,
 	}
 
@@ -27,7 +31,7 @@ func main() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	fmt.Println("Server is running on http://localhost:9090")
+	fmt.Println("Server is running on http://localhost:9000")
 
 	// 创建通道监听信号
 	quit := make(chan os.Signal, 1)
@@ -49,5 +53,12 @@ func main() {
 	}
 
 	fmt.Println("Server exited gracefully")
-} //TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
-// Also, you can try interactive lessons for GoLand by selecting 'Help | Learn IDE Features' from the main menu.
+}
+
+func initViper() {
+	viper.SetConfigFile("config\\dev.yaml")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+}

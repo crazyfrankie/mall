@@ -4,6 +4,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+	"mall/repository/dao"
 	"time"
 )
 
@@ -34,5 +35,8 @@ func InitDB() *gorm.DB {
 }
 
 func Migrate(db *gorm.DB) {
-
+	err := db.AutoMigrate(&dao.User{})
+	if err != nil {
+		panic(err)
+	}
 }

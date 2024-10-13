@@ -1,3 +1,5 @@
+//go:build wireinject
+
 package ioc
 
 import (
@@ -10,7 +12,10 @@ var BaseSet = wire.NewSet(InitRedis, InitDB)
 func InitGin() *gin.Engine {
 	wire.Build(
 		BaseSet,
-	)
 
-	return new(gin.Engine)
+		UserSet,
+
+		InitWeb,
+	)
+	return nil
 }
