@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/go-sql-driver/mysql"
 	"strings"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 
 	"mall/domain"
@@ -16,35 +16,26 @@ import (
 var (
 	ErrUserDuplicateName  = errors.New("duplicate name")
 	ErrUserDuplicatePhone = errors.New("duplicate phone")
+	ErrRecordNotFound     = errors.New("record not found")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type User struct {
-	Id       uint64 `gorm:"primaryKey,autoIncrement"`
-	Name     string `gorm:"unique;not null"`
+	Id       uint64         `gorm:"primaryKey,autoIncrement"`
+	Phone    string         `gorm:"unique; not null"`
+	Name     sql.NullString `gorm:"unique"`
+	Birthday sql.NullTime
 	Password string
-	Phone    string `gorm:"unique"`
 	Ctime    int64
 	Uptime   int64
-	Birthday sql.NullTime
 }
 
-type UserDao interface {
-	Insert(ctx context.Context, user domain.User) error
-	//Delete(ctx context.Context, id uint64) error
-	//Update(ctx context.Context, user domain.User) error
-	//FindById(ctx context.Context, id uint64) (domain.User, error)
-	//FindOrCreateByPhone(ctx context.Context, phone string) (domain.User, error)
-
-	DomainToDao(user domain.User) User
-	DaoToDomain(user User) domain.User
-}
-
-type userDao struct {
+type UserDao struct {
 	db *gorm.DB
 }
 
-func NewUserDao(db *gorm.DB) UserDao {
-	return &userDao{
+func NewUserDao(db *gorm.DB) *UserDao {
+	return &UserDao{
 		db: db,
 	}
 }
@@ -63,13 +54,87 @@ func handleError(err error) error {
 	return err
 }
 
-func (dao *userDao) Insert(ctx context.Context, u domain.User) error {
-	user := dao.DomainToDao(u)
+func (dao *UserDao) Insert(ctx context.Context, phone string) error {
+	// 开启事务
+	tx := dao.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	var existingUser User
+	if err := tx.WithContext(ctx).Where("phone = ?", phone).First(&existingUser).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback() // 查询出错则回滚事务
+			return err
+		}
+	} else {
+		tx.Rollback() // 如果用户已存在则回滚事务
+		return ErrUserDuplicatePhone
+	}
+
+	user := User{
+		Phone: phone,
+	}
 	now := time.Now().UnixMilli()
 	user.Ctime = now
 	user.Uptime = now
-	err := dao.db.WithContext(ctx).Create(&user).Error
-	return handleError(err)
+	if err := tx.WithContext(ctx).Create(&user).Error; err != nil {
+		tx.Rollback() // 插入失败则回滚事务
+		return handleError(err)
+	}
+	return tx.Commit().Error
+}
+
+func (dao *UserDao) FindByName(ctx context.Context, name string) (domain.User, error) {
+	var user User
+
+	result := dao.db.WithContext(ctx).Where("name = ?", name).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return domain.User{}, ErrRecordNotFound
+		}
+		return domain.User{}, result.Error
+	}
+
+	return dao.DaoToDomain(user), nil
+}
+
+func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	var user User
+	result := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&user)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return domain.User{}, ErrRecordNotFound
+		}
+		return domain.User{}, result.Error
+	}
+
+	return dao.DaoToDomain(user), nil
+}
+
+func (dao *UserDao) BindInfo(ctx context.Context, user domain.User) error {
+	// 直接更新用户信息
+	result := dao.db.WithContext(ctx).Model(&User{}).Where("phone = ?", user.Phone).Updates(User{
+		Name: sql.NullString{
+			String: user.Name,
+			Valid:  user.Name != "",
+		},
+		Password: user.Password,
+		Birthday: sql.NullTime{
+			Time:  user.Birthday,
+			Valid: true,
+		},
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("user not found or no updates made")
+	}
+
+	return nil
 }
 
 //func (dao *userDao) FindById(ctx context.Context, id uint64) (domain.User, error) {
@@ -88,18 +153,22 @@ func (dao *userDao) Insert(ctx context.Context, u domain.User) error {
 //
 //}
 
-func (dao *userDao) DomainToDao(user domain.User) User {
+func (dao *UserDao) DomainToDao(user domain.User) User {
 	return User{
-		Name:     user.Name,
+		Name: sql.NullString{
+			String: user.Name,
+			Valid:  user.Name != "",
+		},
 		Password: user.Password,
 	}
 }
 
-func (dao *userDao) DaoToDomain(user User) domain.User {
+func (dao *UserDao) DaoToDomain(user User) domain.User {
 	return domain.User{
 		Id:       user.Id,
-		Name:     user.Name,
+		Name:     user.Name.String,
 		Password: user.Password,
 		Birthday: user.Birthday.Time,
+		Phone:    user.Phone,
 	}
 }
