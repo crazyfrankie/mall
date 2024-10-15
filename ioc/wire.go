@@ -15,6 +15,8 @@ func InitGin() *gin.Engine {
 
 		UserSet,
 
+		InitGinMiddlewares,
+
 		InitWeb,
 	)
 	return nil
