@@ -3,6 +3,7 @@ module mall
 go 1.22
 
 require (
+	github.com/gin-gonic/contrib v0.0.0-20240508051311-c1c6bf0061b0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/go-sql-driver/mysql v1.7.0

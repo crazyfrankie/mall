@@ -2,6 +2,7 @@ package web
 
 import (
 	"errors"
+	"log"
 	"mall/domain"
 	"net/http"
 	"time"
@@ -28,9 +29,10 @@ func NewUserHandler(userSvc *service.UserService, codeSvc *service.CodeService, 
 }
 
 func (ctl *UserHandler) RegisterRoute(r *gin.Engine) {
-	userGroup := r.Group("user")
+	userGroup := r.Group("api/user")
 	{
 		userGroup.POST("signup", ctl.PreSignupCheck())
+		userGroup.POST("login", ctl.NameLogin())
 		userGroup.POST("send-code", ctl.SendVerificationCode())
 		userGroup.POST("signup/verify-code", ctl.SignupVerifyCode())
 		userGroup.POST("login/verify-code", ctl.LoginVerifyCode())
@@ -48,6 +50,7 @@ func (ctl *UserHandler) PreSignupCheck() gin.HandlerFunc {
 			return
 		}
 
+		log.Println("Checking phone:", req.Phone)
 		err := ctl.userSvc.CheckPhone(c.Request.Context(), req.Phone)
 		if err == nil {
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
@@ -211,49 +214,46 @@ func (ctl *UserHandler) BindInfo() gin.HandlerFunc {
 	}
 }
 
-//func (ctl *UserHandler) NameLogin() gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//		type Req struct {
-//			Name     string `json:"name"`
-//			Password string `json:"password"`
-//		}
-//
-//		var req Req
-//		if err := c.Bind(&req); err != nil {
-//			return
-//		}
-//
-//		user, err := ctl.userSvc.Login(c.Request.Context(), domain.User{
-//			Name:     req.Name,
-//			Password: req.Password,
-//		})
-//
-//		switch {
-//		case errors.Is(err, service.ErrRecordNotFound):
-//			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("user not found")))
-//			return
-//		case errors.Is(err, service.ErrInvalidUserOrPassword):
-//			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("username or password error")))
-//			return
-//		case err != nil:
-//			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("system error")))
-//			return
-//		}
-//
-//		ssid, err := ctl.sessHdl.CreateSession(c.Request.Context(), user)
-//		if err != nil {
-//			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
-//			return
-//		}
-//		err = ctl.jwtHdl.GenerateToken(c, ssid)
-//		if err != nil {
-//			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
-//			return
-//		}
-//
-//		c.JSON(http.StatusOK, GetResponse(WithStatus(http.StatusOK), WithMsg("login successfully")))
-//	}
-//}
+func (ctl *UserHandler) NameLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		type Req struct {
+			Name     string `json:"name"`
+			Password string `json:"password"`
+		}
+
+		var req Req
+		if err := c.Bind(&req); err != nil {
+			return
+		}
+
+		phone, err := ctl.userSvc.NameLogin(c.Request.Context(), domain.User{
+			Name:     req.Name,
+			Password: req.Password,
+		})
+
+		switch {
+		case errors.Is(err, service.ErrRecordNotFound):
+			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("user not found")))
+			return
+		case errors.Is(err, service.ErrInvalidUserOrPassword):
+			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("username or password error")))
+			return
+		case err != nil:
+			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg("system error")))
+			return
+		}
+
+		var ssid string
+		ssid, err = ctl.userSvc.SetSession(c.Request.Context(), phone)
+		err = ctl.jwtHdl.GenerateToken(c, ssid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
+			return
+		}
+
+		c.JSON(http.StatusOK, GetResponse(WithStatus(http.StatusOK), WithMsg("login successfully")))
+	}
+}
 
 func (ctl *UserHandler) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {

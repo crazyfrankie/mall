@@ -61,3 +61,17 @@ func (svc *UserService) BindInfo(ctx context.Context, user domain.User) error {
 
 	return svc.repo.BindInfo(ctx, user)
 }
+
+func (svc *UserService) NameLogin(ctx context.Context, user domain.User) (string, error) {
+	u, err := svc.repo.FindByName(ctx, user.Name)
+	if err != nil {
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password))
+	if err != nil {
+		return "", err
+	}
+
+	return u.Phone, nil
+}

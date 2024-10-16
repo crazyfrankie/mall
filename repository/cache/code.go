@@ -10,8 +10,12 @@ import (
 )
 
 var (
-	ErrSendTooMany   = errors.New("send too frequency")
-	ErrVerifyTooMany = errors.New("too many verifications")
+	ErrSendTooMany    = errors.New("send too frequency")
+	ErrVerifyTooMany  = errors.New("too many verifications")
+	ErrCodeStillValid = errors.New("code is still valid")
+	ErrKeyConflict    = errors.New("key conflict detected")
+	ErrCodeExpired    = errors.New("code has expired")
+	ErrCodeNotSet     = errors.New("code is not set")
 )
 
 //go:embed lua/set_code.lua
@@ -43,9 +47,15 @@ func (cache *CodeCache) Store(ctx context.Context, biz, phone, code string) erro
 	case -1:
 		// 发送太频繁
 		return ErrSendTooMany
+	case -2:
+		// 验证码尚未过期
+		return ErrCodeStillValid // 新增的错误类型，表示验证码仍然有效
+	case -3:
+		// 有人误操作导致 key 冲突
+		return ErrKeyConflict // 新增的错误类型，表示 key 冲突
 	}
 
-	return errors.New("system error")
+	return errors.New("system error") // 保留原来的错误处理
 }
 
 func (cache *CodeCache) Acquire(ctx context.Context, biz, phone, inputCode string) (bool, error) {
@@ -60,11 +70,17 @@ func (cache *CodeCache) Acquire(ctx context.Context, biz, phone, inputCode strin
 	case 0:
 		return true, nil
 	case -1:
-		// 如果频繁出这个错误代表有人搞你 需要告警
+		// 频繁错误，可能是恶意攻击，需告警
 		return false, ErrVerifyTooMany
+	case -2:
+		// 验证码已过期
+		return false, ErrCodeExpired // 新增的错误类型，表示验证码已过期
+	case -3:
+		// 验证码未设置或有其他问题
+		return false, ErrCodeNotSet // 新增的错误类型，表示验证码未设置
 	}
 
-	return false, errors.New("system error")
+	return false, errors.New("system error") // 保留原来的错误处理
 }
 
 func (cache *CodeCache) key(biz, phone string) string {
