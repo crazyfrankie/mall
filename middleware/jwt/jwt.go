@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -38,9 +40,16 @@ func (h *TokenHandler) GenerateToken(ctx *gin.Context, sessionId string) error {
 
 func (h *TokenHandler) ExtractToken(ctx *gin.Context) string {
 	tokenHeader := ctx.GetHeader("Authorization")
+	fmt.Println("Token Header:", tokenHeader) // 打印请求头
 	if tokenHeader == "" {
 		return ""
 	}
 
-	return tokenHeader
+	// 分割并检查
+	parts := strings.Split(tokenHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "" // 或者返回一个错误
+	}
+
+	return parts[1]
 }

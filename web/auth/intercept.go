@@ -35,6 +35,12 @@ func (b *LoginJWTMiddlewareBuilder) IgnorePath(path string) *LoginJWTMiddlewareB
 
 func (b *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 如果是 OPTIONS 请求，直接放行
+		if c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
 		// 路径校验
 		if _, ok := b.paths[c.Request.URL.Path]; ok {
 			c.Next()
