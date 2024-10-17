@@ -52,6 +52,10 @@ func (svc *UserService) SetSession(ctx context.Context, phone string) (string, e
 	return ssid, nil
 }
 
+func (svc *UserService) DeleteSession(ctx context.Context, ssid string) error {
+	return svc.sessHdl.DeleteSession(ctx, ssid)
+}
+
 func (svc *UserService) BindInfo(ctx context.Context, user domain.User) error {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {

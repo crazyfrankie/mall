@@ -39,6 +39,7 @@ func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeServi
 func (svc *CodeService) Send(ctx context.Context, biz, phone string) error {
 	code := svc.GenerateCode()
 
+	// 加密后再存储
 	hash := svc.GenerateHMAC(code, secretKey)
 
 	err := svc.repo.Store(ctx, biz, phone, hash)
