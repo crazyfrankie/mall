@@ -3,6 +3,7 @@ package jwt
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +51,13 @@ func (h *TokenHandler) ExtractToken(ctx *gin.Context) string {
 		return ""
 	}
 
-	return tokenHeader
+	// 分割并检查
+	parts := strings.Split(tokenHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "" // 或者返回一个错误
+	}
+
+	return parts[1] // 返回 token
 }
 
 func (h *TokenHandler) ParseToken(token string) (*Claim, error) {
