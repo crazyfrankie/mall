@@ -257,11 +257,31 @@ func (ctl *UserHandler) NameLogin() gin.HandlerFunc {
 
 func (ctl *UserHandler) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		token := ctl.jwtHdl.ExtractToken(c)
 
+		claim, err := ctl.jwtHdl.ParseToken(token)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, GetResponse(WithStatus(http.StatusBadRequest), WithMsg(err.Error()), WithErr(err.Error())))
+			return
+		}
+
+		err = ctl.userSvc.DeleteSession(c.Request.Context(), claim.SessionId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
+			return
+		}
+
+		c.JSON(http.StatusOK, GetResponse(WithStatus(http.StatusOK), WithMsg("log out successfully")))
 	}
 }
 
 func (ctl *UserHandler) EditInfo() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+	}
+}
+
+func (ctl *UserHandler) Heartbeat() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 	}
