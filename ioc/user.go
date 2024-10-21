@@ -2,12 +2,13 @@ package ioc
 
 import (
 	"github.com/google/wire"
-	"mall/middleware/jwt"
-	"mall/repository"
-	"mall/repository/cache"
-	"mall/repository/dao"
-	"mall/service"
-	"mall/web"
+
+	"mall/internal/user/middleware/jwt"
+	"mall/internal/user/repository"
+	"mall/internal/user/repository/cache"
+	"mall/internal/user/repository/dao"
+	"mall/internal/user/service"
+	"mall/internal/user/web"
 )
 
 var JWTSet = wire.NewSet(

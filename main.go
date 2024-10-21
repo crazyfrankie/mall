@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,12 +11,15 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
+	"go.uber.org/zap"
 
 	"mall/ioc"
 )
 
 func main() {
 	initViper()
+	initLogger()
 
 	router := ioc.InitGin()
 
@@ -31,7 +33,7 @@ func main() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	fmt.Println("Server is running on http://localhost:9000")
+	zap.L().Info("Server is running", zap.String("address", "http://localhost:9000"))
 
 	// 创建通道监听信号
 	quit := make(chan os.Signal, 1)
@@ -41,7 +43,7 @@ func main() {
 
 	// 阻塞直到收到信号
 	<-quit
-	fmt.Println("Shutting down server")
+	zap.L().Info("shutting down server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
@@ -49,16 +51,28 @@ func main() {
 
 	// 优雅地关闭服务器
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced shutting down:", err)
+		zap.L().Error("Server forced shutting down", zap.Error(err))
 	}
 
-	fmt.Println("Server exited gracefully")
+	zap.L().Info("Server exited gracefully")
 }
 
 func initViper() {
-	viper.SetConfigFile("config\\dev.yml")
-	err := viper.ReadInConfig()
+	viper.SetConfigType("yaml")
+	err := viper.AddRemoteProvider("etcd3", "127.0.0.1:2379", "/mall")
 	if err != nil {
 		panic(err)
 	}
+	err = viper.ReadRemoteConfig()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func initLogger() {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	zap.ReplaceGlobals(logger)
 }

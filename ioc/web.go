@@ -2,10 +2,10 @@ package ioc
 
 import (
 	"github.com/gin-gonic/gin"
-	"mall/middleware/jwt"
-	"mall/web/auth"
+	"mall/internal/user/middleware/jwt"
+	"mall/internal/user/web/auth"
 
-	"mall/web"
+	"mall/internal/user/web"
 )
 
 func InitWeb(mdl []gin.HandlerFunc, userHdl *web.UserHandler) *gin.Engine {
@@ -17,10 +17,10 @@ func InitWeb(mdl []gin.HandlerFunc, userHdl *web.UserHandler) *gin.Engine {
 	return server
 }
 
-func InitGinMiddlewares(jwtHdl *jwt.TokenHandler) []gin.HandlerFunc {
+func InitGinMiddlewares(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		auth.CORS(),
-		auth.NewLoginJWTMiddlewareBuilder(jwtHdl).
+		auth.NewLoginJWTMiddlewareBuilder(jwtHdl, sessionHdl).
 			IgnorePath("/api/user/signup").
 			IgnorePath("/api/user/login").
 			IgnorePath("/api/user/send-code").

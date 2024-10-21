@@ -1,12 +1,14 @@
 package ioc
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
-	"mall/repository/dao"
-	"time"
+
+	"mall/internal/user/repository/dao"
 )
 
 func InitDB() *gorm.DB {
