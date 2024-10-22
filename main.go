@@ -59,7 +59,7 @@ func main() {
 
 func initViper() {
 	viper.SetConfigType("yaml")
-	err := viper.AddRemoteProvider("etcd3", "127.0.0.1:2379", "/mall")
+	err := viper.AddRemoteProvider("etcd3", "127.0.0.1:2379", "/mall/config")
 	if err != nil {
 		panic(err)
 	}

@@ -23,7 +23,7 @@ func NewUserRepository(dao *dao.UserDao) *UserRepository {
 	}
 }
 
-func (repo *UserRepository) Insert(ctx context.Context, phone string) error {
+func (repo *UserRepository) Insert(ctx context.Context, phone string) (domain.User, error) {
 	return repo.dao.Insert(ctx, phone)
 }
 

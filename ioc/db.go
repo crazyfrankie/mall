@@ -19,9 +19,10 @@ func InitDB() *gorm.DB {
 		ConnMaxLifeTime int    `yaml:"connMaxLifeTime"`
 	}
 
-	cfg := Config{
-		DSN: "root:123456@tcp(localhost:3306)/mall?charset=utf8mb4&parseTime=true&loc=Local",
-	}
+	var cfg Config
+	//cfg := Config{
+	//	DSN: "root:123456@tcp(localhost:3306)/mall?charset=utf8mb4&parseTime=true&loc=Local",
+	//}
 
 	err := viper.UnmarshalKey("mysql", &cfg)
 	if err != nil {

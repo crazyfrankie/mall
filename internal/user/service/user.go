@@ -35,8 +35,22 @@ func (svc *UserService) CheckPhone(ctx context.Context, phone string) error {
 	return svc.repo.CheckPhone(ctx, phone)
 }
 
-func (svc *UserService) CreateUser(ctx context.Context, phone string) error {
-	return svc.repo.Insert(ctx, phone)
+func (svc *UserService) FindOrCreateUser(ctx context.Context, phone string) (domain.User, error) {
+	user, err := svc.repo.FindByPhone(ctx, phone)
+	if err == nil {
+		return user, nil
+	}
+
+	if !errors.Is(err, ErrRecordNotFound) {
+		return domain.User{}, err
+	}
+
+	user, err = svc.repo.Insert(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return user, nil
 }
 
 func (svc *UserService) SetSession(ctx context.Context, phone string) (string, error) {

@@ -24,8 +24,7 @@ func InitGinMiddlewares(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession) 
 			IgnorePath("/api/user/signup").
 			IgnorePath("/api/user/login").
 			IgnorePath("/api/user/send-code").
-			IgnorePath("/api/user/signup/verify-code").
-			IgnorePath("/api/user/login/verify-code").
+			IgnorePath("/api/user/verify-code").
 			CheckLogin(),
 	}
 }

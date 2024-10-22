@@ -46,27 +46,27 @@ func handleError(err error) error {
 	return err
 }
 
-func (dao *UserDao) Insert(ctx context.Context, phone string) error {
+func (dao *UserDao) Insert(ctx context.Context, phone string) (domain.User, error) {
 	// 开启事务
 	tx := dao.db.Begin()
 	if tx.Error != nil {
-		return tx.Error
+		return domain.User{}, tx.Error
 	}
 
 	var existingUser User
 	if err := tx.WithContext(ctx).Where("phone = ?", phone).First(&existingUser).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			tx.Rollback() // 查询出错则回滚事务
-			return err
+			return domain.User{}, err
 		}
 	} else {
 		tx.Rollback() // 如果用户已存在则回滚事务
-		return ErrUserDuplicatePhone
+		return domain.User{}, ErrUserDuplicatePhone
 	}
 
 	code, err := dao.GenerateCode()
 	if err != nil {
-		return err
+		return domain.User{}, err
 	}
 	user := User{
 		Phone: phone,
@@ -77,9 +77,9 @@ func (dao *UserDao) Insert(ctx context.Context, phone string) error {
 	user.UpdateAt = now
 	if err := tx.WithContext(ctx).Create(&user).Error; err != nil {
 		tx.Rollback() // 插入失败则回滚事务
-		return handleError(err)
+		return domain.User{}, handleError(err)
 	}
-	return tx.Commit().Error
+	return dao.UserDaoToDomain(user), tx.Commit().Error
 }
 
 func (dao *UserDao) FindByName(ctx context.Context, name string) (domain.User, error) {
