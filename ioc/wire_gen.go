@@ -9,12 +9,7 @@ package ioc
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	"mall/internal/user/middleware/jwt"
-	"mall/internal/user/repository"
-	"mall/internal/user/repository/cache"
-	"mall/internal/user/repository/dao"
-	"mall/internal/user/service"
-	"mall/internal/user/web"
+	"mall/internal/auth/jwt"
 )
 
 // Injectors from wire.go:
@@ -25,15 +20,9 @@ func InitGin() *gin.Engine {
 	redisSession := jwt.NewRedisSession(cmdable)
 	v := InitGinMiddlewares(tokenHandler, redisSession)
 	db := InitDB()
-	userDao := dao.NewUserDao(db)
-	userRepository := repository.NewUserRepository(userDao)
-	userService := service.NewUserService(userRepository, redisSession)
-	codeCache := cache.NewCodeCache(cmdable)
-	codeRepository := repository.NewCodeRepository(codeCache)
-	smsService := InitSMSService()
-	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService, tokenHandler)
-	engine := InitWeb(v, userHandler)
+	userHandler := InitUser(db, cmdable)
+	productHandler := InitProduct(db, cmdable)
+	engine := InitWeb(v, userHandler, productHandler)
 	return engine
 }
 

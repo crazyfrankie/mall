@@ -1,4 +1,4 @@
-package ioc
+package user
 
 import (
 	"mall/internal/user/service/sms"

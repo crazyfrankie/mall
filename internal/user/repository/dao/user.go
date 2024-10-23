@@ -20,8 +20,6 @@ var (
 	ErrRecordNotFound     = errors.New("record not found")
 )
 
-const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
-
 type UserDao struct {
 	db *gorm.DB
 }
@@ -64,22 +62,22 @@ func (dao *UserDao) Insert(ctx context.Context, phone string) (domain.User, erro
 		return domain.User{}, ErrUserDuplicatePhone
 	}
 
-	code, err := dao.GenerateCode()
-	if err != nil {
-		return domain.User{}, err
-	}
+	var userCount int64
+	tx.WithContext(ctx).Model(&User{}).Count(&userCount)
+
 	user := User{
 		Phone: phone,
-		Name:  code[:15] + "-" + code[15:],
+		Name:  dao.generateName(),
 	}
 	now := time.Now().UnixMilli()
 	user.CreateAt = now
 	user.UpdateAt = now
+
 	if err := tx.WithContext(ctx).Create(&user).Error; err != nil {
 		tx.Rollback() // 插入失败则回滚事务
 		return domain.User{}, handleError(err)
 	}
-	return dao.UserDaoToDomain(user), tx.Commit().Error
+	return dao.userDaoToDomain(user), tx.Commit().Error
 }
 
 func (dao *UserDao) FindByName(ctx context.Context, name string) (domain.User, error) {
@@ -93,7 +91,7 @@ func (dao *UserDao) FindByName(ctx context.Context, name string) (domain.User, e
 		return domain.User{}, result.Error
 	}
 
-	return dao.UserDaoToDomain(user), nil
+	return dao.userDaoToDomain(user), nil
 }
 
 func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
@@ -107,7 +105,7 @@ func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (domain.User,
 		return domain.User{}, result.Error
 	}
 
-	return dao.UserDaoToDomain(user), nil
+	return dao.userDaoToDomain(user), nil
 }
 
 func (dao *UserDao) UpdatePassword(ctx context.Context, user domain.User) error {
@@ -185,7 +183,7 @@ func (dao *UserDao) FindAllAddrById(ctx context.Context, userId uint64) ([]domai
 
 	var addresses []domain.Address
 	for _, addr := range modelAddresses {
-		addresses = append(addresses, dao.AddrDaoToDomain(addr))
+		addresses = append(addresses, dao.addrDaoToDomain(addr))
 	}
 	return addresses, nil
 }
@@ -222,24 +220,25 @@ func (dao *UserDao) UpdateAddrById(ctx context.Context, addr domain.Address) (do
 	return addr, nil
 }
 
-func (dao *UserDao) UserDomainToDao(user domain.User) User {
+func (dao *UserDao) userDomainToDao(user domain.User) User {
 	return User{
 		Name:     user.Name,
 		Password: user.Password,
 	}
 }
 
-func (dao *UserDao) UserDaoToDomain(user User) domain.User {
+func (dao *UserDao) userDaoToDomain(user User) domain.User {
 	return domain.User{
-		Id:       user.Id,
-		Name:     user.Name,
-		Password: user.Password,
-		Birthday: user.Birthday.Time,
-		Phone:    user.Phone,
+		Id:         user.Id,
+		Name:       user.Name,
+		Password:   user.Password,
+		Birthday:   user.Birthday.Time,
+		Phone:      user.Phone,
+		IsMerchant: user.IsMerchant,
 	}
 }
 
-func (dao *UserDao) AddrDomainToDao(addr domain.Address) Address {
+func (dao *UserDao) addrDomainToDao(addr domain.Address) Address {
 	return Address{
 		UserId:    addr.UserId,
 		Street:    addr.Street,
@@ -251,7 +250,7 @@ func (dao *UserDao) AddrDomainToDao(addr domain.Address) Address {
 	}
 }
 
-func (dao *UserDao) AddrDaoToDomain(addr Address) domain.Address {
+func (dao *UserDao) addrDaoToDomain(addr Address) domain.Address {
 	return domain.Address{
 		Id:        addr.Id,
 		UserId:    addr.UserId,
@@ -264,10 +263,12 @@ func (dao *UserDao) AddrDaoToDomain(addr Address) domain.Address {
 	}
 }
 
-func (dao *UserDao) GenerateCode() (string, error) {
+func (dao *UserDao) generateName() string {
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+
 	bytes := make([]byte, 20)
 	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+		return ""
 	}
 
 	var sb strings.Builder
@@ -277,5 +278,5 @@ func (dao *UserDao) GenerateCode() (string, error) {
 		sb.WriteByte(charset[int(b)%len(charset)])
 	}
 
-	return sb.String(), nil
+	return sb.String()[:15] + "-" + sb.String()[15:]
 }

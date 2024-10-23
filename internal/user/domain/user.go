@@ -3,11 +3,12 @@ package domain
 import "time"
 
 type User struct {
-	Id       uint64
-	Name     string
-	Password string
-	Phone    string
-	Birthday time.Time
+	Id         uint64
+	Name       string
+	Password   string
+	Phone      string
+	IsMerchant bool
+	Birthday   time.Time
 }
 
 type Address struct {

@@ -7,14 +7,13 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"mall/internal/auth/jwt"
 	"mall/internal/user/domain"
-	"mall/internal/user/middleware/jwt"
 	"mall/internal/user/repository"
 )
 
 var (
 	ErrUserDuplicateName     = repository.ErrUserDuplicateName
-	ErrUserDuplicatePhone    = repository.ErrUserDuplicatePhone
 	ErrRecordNotFound        = repository.ErrRecordNotFound
 	ErrInvalidUserOrPassword = errors.New("username or password error")
 )
@@ -94,18 +93,18 @@ func (svc *UserService) UpdateBirthday(ctx context.Context, user domain.User) er
 	return svc.repo.UpdateBirthday(ctx, user)
 }
 
-func (svc *UserService) NameLogin(ctx context.Context, user domain.User) (string, error) {
+func (svc *UserService) NameLogin(ctx context.Context, user domain.User) (domain.User, error) {
 	u, err := svc.repo.FindByName(ctx, user.Name)
 	if err != nil {
-		return "", err
+		return domain.User{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password))
 	if err != nil {
-		return "", err
+		return domain.User{}, err
 	}
 
-	return u.Phone, nil
+	return u, nil
 }
 
 func (svc *UserService) BindAddress(ctx context.Context, address domain.Address) error {

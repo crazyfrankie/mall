@@ -1,35 +1,13 @@
 package ioc
 
 import (
-	"github.com/google/wire"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
-	"mall/internal/user/middleware/jwt"
-	"mall/internal/user/repository"
-	"mall/internal/user/repository/cache"
-	"mall/internal/user/repository/dao"
-	"mall/internal/user/service"
+	"mall/internal/user"
 	"mall/internal/user/web"
 )
 
-var JWTSet = wire.NewSet(
-	jwt.NewJwtHandler,
-	jwt.NewRedisSession,
-)
-
-var UserSet = wire.NewSet(
-	dao.NewUserDao,
-
-	cache.NewUserCache,
-	cache.NewCodeCache,
-
-	repository.NewUserRepository,
-	repository.NewCodeRepository,
-
-	InitSMSService,
-	service.NewUserService,
-	service.NewCodeService,
-
-	JWTSet,
-
-	web.NewUserHandler,
-)
+func InitUser(db *gorm.DB, cmd redis.Cmdable) *web.UserHandler {
+	return user.InitUserHandler(db, cmd)
+}

@@ -4,11 +4,27 @@ type Product struct {
 	Id          uint64 `gorm:"primaryKey,autoIncrement"`
 	Name        string `gorm:"not null"`
 	Description string
-	Price       float64 `gorm:"not null"`
-	Stock       int     `gorm:"not null"`
-	IsActive    bool    `gorm:"default:true"`
+	Price       float64            `gorm:"not null"`
+	Stock       int                `gorm:"not null"`
+	IsActive    bool               `gorm:"default:true,index"`
+	Quantity    int                `gorm:"not null"`
+	Attributes  []ProductAttribute `gorm:"type:json"` // 存储为 JSON 类型
 	CreateAt    int64
 	UpdateAt    int64
+}
+
+type ProductImage struct {
+	Id        uint64 `gorm:"primaryKey,autoIncrement"`
+	ProductId uint64 `gorm:"not null"`      // 外键，关联到 Product 表
+	ImageUrl  string `gorm:"not null"`      // 图片的 URL
+	IsPrimary bool   `gorm:"default:false"` // 是否是主图
+}
+
+type ProductAttribute struct {
+	Id        uint64 `gorm:"primaryKey,autoIncrement"`
+	ProductId uint64 // 外键
+	Name      string `json:"name"`
+	Value     string `json:"value"`
 }
 
 type Category struct {

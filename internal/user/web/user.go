@@ -10,8 +10,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
+	"mall/internal/auth/jwt"
 	"mall/internal/user/domain"
-	"mall/internal/user/middleware/jwt"
 	"mall/internal/user/service"
 )
 
@@ -150,7 +150,7 @@ func (ctl *UserHandler) VerificationCode() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
 			return
 		}
-		err = ctl.jwtHdl.GenerateToken(c, ssid)
+		err = ctl.jwtHdl.GenerateToken(c, ssid, user.IsMerchant)
 		if err != nil {
 			zap.L().Error(fmt.Sprintf("手机号%s:设置 JWT:系统错误", req.Biz), zap.Error(err))
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
@@ -297,7 +297,7 @@ func (ctl *UserHandler) NameLogin() gin.HandlerFunc {
 			return
 		}
 
-		phone, err := ctl.userSvc.NameLogin(c.Request.Context(), domain.User{
+		user, err := ctl.userSvc.NameLogin(c.Request.Context(), domain.User{
 			Name:     req.Name,
 			Password: req.Password,
 		})
@@ -318,13 +318,13 @@ func (ctl *UserHandler) NameLogin() gin.HandlerFunc {
 		}
 
 		var ssid string
-		ssid, err = ctl.userSvc.SetSession(c.Request.Context(), phone)
+		ssid, err = ctl.userSvc.SetSession(c.Request.Context(), user.Phone)
 		if err != nil {
 			zap.L().Error("登录:创建 Session:系统错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
 			return
 		}
-		err = ctl.jwtHdl.GenerateToken(c, ssid)
+		err = ctl.jwtHdl.GenerateToken(c, ssid, user.IsMerchant)
 		if err != nil {
 			zap.L().Error("登录:设置 JWT:系统错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))

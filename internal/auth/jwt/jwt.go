@@ -22,7 +22,8 @@ type TokenHandler struct {
 
 type Claim struct {
 	jwt.StandardClaims
-	SessionId string
+	SessionId  string
+	IsMerchant bool
 }
 
 func NewJwtHandler() *TokenHandler {
@@ -31,9 +32,10 @@ func NewJwtHandler() *TokenHandler {
 	}
 }
 
-func (h *TokenHandler) GenerateToken(ctx *gin.Context, sessionId string) error {
+func (h *TokenHandler) GenerateToken(ctx *gin.Context, sessionId string, isMerchant bool) error {
 	claim := Claim{
-		SessionId: sessionId,
+		SessionId:  sessionId,
+		IsMerchant: isMerchant,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
 		},
