@@ -10,36 +10,28 @@ import (
 	"mall/internal/auth/jwt"
 )
 
-type AuthorityJWTMiddlewareBuilder struct {
-	merchantPaths map[string]struct{}
-	ignorePaths   map[string]struct{}
-	jwtHdl        *jwt.TokenHandler
-	sessionHdl    *jwt.RedisSession
+type TokenEffectiveBuilder struct {
+	paths      map[string]struct{}
+	jwtHdl     *jwt.TokenHandler
+	sessionHdl *jwt.RedisSession
 }
 
-func NewAuthorityMiddlewareBuilder(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession) *AuthorityJWTMiddlewareBuilder {
-	return &AuthorityJWTMiddlewareBuilder{
-		merchantPaths: make(map[string]struct{}),
-		ignorePaths:   make(map[string]struct{}),
-		jwtHdl:        jwtHdl,
-		sessionHdl:    sessionHdl,
+func NewTokenEffectiveBuilder(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession) *TokenEffectiveBuilder {
+	return &TokenEffectiveBuilder{
+		paths:      make(map[string]struct{}),
+		jwtHdl:     jwtHdl,
+		sessionHdl: sessionHdl,
 	}
 }
 
-func (b *AuthorityJWTMiddlewareBuilder) IgnorePath(path string) *AuthorityJWTMiddlewareBuilder {
-	b.ignorePaths[path] = struct{}{}
+func (b *TokenEffectiveBuilder) IgnorePath(path string) *TokenEffectiveBuilder {
+	b.paths[path] = struct{}{}
 	return b
 }
 
-func (b *AuthorityJWTMiddlewareBuilder) MerchantPath(path string) *AuthorityJWTMiddlewareBuilder {
-	b.merchantPaths[path] = struct{}{}
-	return b
-}
-
-func (b *AuthorityJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
+func (b *TokenEffectiveBuilder) Check() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 路径校验
-		if _, ok := b.ignorePaths[c.Request.URL.Path]; ok {
+		if _, ok := b.paths[c.Request.URL.Path]; ok {
 			c.Next()
 			return
 		}
@@ -50,8 +42,7 @@ func (b *AuthorityJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		claims, err := b.jwtHdl.ParseToken(tokenHeader)
 		if err != nil {
 			code, msg := b.jwtHdl.HandleTokenError(err)
-			c.JSON(code, msg)
-			c.Abort()
+			c.AbortWithError(code, errors.New(msg))
 			return
 		}
 
@@ -80,12 +71,6 @@ func (b *AuthorityJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 				c.AbortWithStatus(http.StatusBadRequest)
 				return
 			}
-		}
-
-		// 检查是否为商家
-		if _, isMerchantPath := b.merchantPaths[c.Request.URL.Path]; isMerchantPath && !claims.IsMerchant {
-			c.AbortWithStatusJSON(http.StatusForbidden, "access denied for non-merchants")
-			return
 		}
 
 		// 将解析出来的 Claims 存入上下文
