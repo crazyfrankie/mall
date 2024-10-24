@@ -20,7 +20,7 @@ func InitGin() *gin.Engine {
 
 		InitProduct,
 
-		InitGinMiddlewares,
+		InitMiddleware,
 
 		InitWeb,
 	)

@@ -32,7 +32,6 @@ func NewUserHandler(userSvc *service.UserService, codeSvc *service.CodeService, 
 func (ctl *UserHandler) RegisterRoute(r *gin.Engine) {
 	userGroup := r.Group("api/user")
 	{
-		userGroup.POST("signup", ctl.PreCheckPhone())
 		userGroup.POST("login", ctl.NameLogin())
 		userGroup.POST("send-code", ctl.SendVerificationCode())
 		userGroup.POST("verify-code", ctl.VerificationCode())
@@ -40,34 +39,6 @@ func (ctl *UserHandler) RegisterRoute(r *gin.Engine) {
 		userGroup.POST("bind/name", ctl.UpdateName())
 		userGroup.POST("bind/birthday", ctl.UpdateBirthday())
 		userGroup.GET("refresh", ctl.KeepAive())
-	}
-}
-
-func (ctl *UserHandler) PreCheckPhone() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		type Req struct {
-			Phone string `json:"phone"`
-		}
-		var req Req
-		if err := c.Bind(&req); err != nil {
-			zap.L().Error("预检手机号:绑定信息错误", zap.Error(err))
-			return
-		}
-
-		err := ctl.userSvc.CheckPhone(c.Request.Context(), req.Phone)
-		switch {
-		case errors.Is(err, service.ErrRecordNotFound):
-			zap.L().Info("预检手机号不存在:需要注册", zap.Error(err))
-			c.JSON(http.StatusAccepted, GetResponse(WithStatus(http.StatusAccepted), WithMsg("phone need signup")))
-			return
-		case err != nil:
-			zap.L().Error("预检手机号:系统错误", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
-			return
-		}
-
-		zap.L().Info("手机号预检成功")
-		c.JSON(http.StatusOK, GetResponse(WithStatus(http.StatusOK), WithMsg("phone need login")))
 	}
 }
 
