@@ -47,7 +47,7 @@ func (b *TokenEffectiveBuilder) Check() gin.HandlerFunc {
 		}
 
 		// 检测 ssid 是否有效
-		err = b.sessionHdl.AcquireSession(c.Request.Context(), claims.SessionId)
+		err = b.sessionHdl.AcquireSession(c.Request.Context(), claims.IsMerchant, claims.Id)
 		if err != nil {
 			if errors.Is(err, jwt.ErrKeyNotFound) {
 				c.AbortWithError(http.StatusUnauthorized, errors.New("you need login"))
@@ -58,7 +58,7 @@ func (b *TokenEffectiveBuilder) Check() gin.HandlerFunc {
 		}
 
 		// 刷新 ssid 有效时间
-		err = b.sessionHdl.ExtendSession(c.Request.Context(), claims.SessionId)
+		err = b.sessionHdl.ExtendSession(c.Request.Context(), claims.IsMerchant, claims.Id)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return

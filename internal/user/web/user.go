@@ -13,19 +13,22 @@ import (
 	"mall/internal/auth/jwt"
 	"mall/internal/user/domain"
 	"mall/internal/user/service"
+	"mall/pkg/logger"
 )
 
 type UserHandler struct {
 	userSvc *service.UserService
 	codeSvc *service.CodeService
 	jwtHdl  *jwt.TokenHandler
+	l       logger.Logger
 }
 
-func NewUserHandler(userSvc *service.UserService, codeSvc *service.CodeService, jwtHdl *jwt.TokenHandler) *UserHandler {
+func NewUserHandler(userSvc *service.UserService, codeSvc *service.CodeService, jwtHdl *jwt.TokenHandler, l logger.Logger) *UserHandler {
 	return &UserHandler{
 		userSvc: userSvc,
 		codeSvc: codeSvc,
 		jwtHdl:  jwtHdl,
+		l:       l,
 	}
 }
 
@@ -129,7 +132,7 @@ func (ctl *UserHandler) VerificationCode() gin.HandlerFunc {
 		}
 
 		maskedPhone := req.Phone[:3] + "****" + req.Phone[len(req.Phone)-4:]
-		zap.L().Info(fmt.Sprintf("%s:用户处理成功", req.Biz), zap.String("phone", maskedPhone))
+		ctl.l.Debug(fmt.Sprintf("%s:用户处理成功", req.Biz), logger.String("phone", maskedPhone))
 
 		c.JSON(http.StatusOK, GetResponse(WithStatus(http.StatusOK), WithMsg(fmt.Sprintf("%s successfully", req.Biz)), WithData(map[string]interface{}{
 			"id":    user.Id,
@@ -318,7 +321,7 @@ func (ctl *UserHandler) Logout() gin.HandlerFunc {
 			return
 		}
 
-		err = ctl.userSvc.DeleteSession(c.Request.Context(), claim.SessionId)
+		err = ctl.userSvc.DeleteSession(c.Request.Context(), claim.IsMerchant, claim.Id)
 		if err != nil {
 			zap.L().Error("退出登录:系统错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
@@ -342,7 +345,7 @@ func (ctl *UserHandler) KeepAive() gin.HandlerFunc {
 		}
 
 		// 刷新 Session 有效期
-		err = ctl.userSvc.ExtendSessionExpiration(c.Request.Context(), claims.SessionId)
+		err = ctl.userSvc.ExtendSessionExpiration(c.Request.Context(), claims.IsMerchant, claims.SessionId)
 		if err != nil {
 			zap.L().Error("维持登录状态:系统错误")
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))

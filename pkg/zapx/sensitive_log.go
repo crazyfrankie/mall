@@ -12,13 +12,16 @@ func NewCustomCore(core zapcore.Core) *CustomCore {
 	}
 }
 
-func (z *CustomCore) Write(en zapcore.Entry, fields []zapcore.Field) error {
-	for _, fd := range fields {
+func (z CustomCore) Write(en zapcore.Entry, fields []zapcore.Field) error {
+	modifiedFields := make([]zapcore.Field, len(fields))
+	copy(modifiedFields, fields)
+
+	for i, fd := range modifiedFields {
 		if fd.Key == "phone" {
 			phone := fd.String
-			fd.String = phone[:3] + "****" + phone[7:]
+			modifiedFields[i].String = phone[:3] + "****" + phone[7:]
 		}
 	}
 
-	return z.Core.Write(en, fields)
+	return z.Core.Write(en, modifiedFields)
 }

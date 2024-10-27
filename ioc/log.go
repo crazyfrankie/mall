@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"mall/pkg/logger"
 	"os"
 
 	"go.uber.org/zap"
@@ -9,12 +10,12 @@ import (
 	"mall/pkg/zapx"
 )
 
-func InitLogger() *zap.Logger {
+func InitLogger() logger.Logger {
 	encodeConfig := zap.NewDevelopmentEncoderConfig()
 	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encodeConfig), zapcore.AddSync(os.Stdout), zapcore.DebugLevel)
 
 	customCore := zapx.NewCustomCore(core)
-	logger := zap.New(customCore)
+	l := zap.New(customCore)
 
-	return logger
+	return logger.NewZapLogger(l)
 }
