@@ -67,12 +67,12 @@ func (svc *UserService) SetSession(ctx context.Context, phone string) (string, e
 	return ssid, nil
 }
 
-func (svc *UserService) DeleteSession(ctx context.Context, ssid string) error {
-	return svc.sessHdl.DeleteSession(ctx, ssid)
+func (svc *UserService) DeleteSession(ctx context.Context, isMerchant bool, id string) error {
+	return svc.sessHdl.DeleteSession(ctx, isMerchant, id)
 }
 
-func (svc *UserService) ExtendSessionExpiration(ctx context.Context, ssid string) error {
-	return svc.sessHdl.ExtendSession(ctx, ssid)
+func (svc *UserService) ExtendSessionExpiration(ctx context.Context, isMerchant bool, id string) error {
+	return svc.sessHdl.ExtendSession(ctx, isMerchant, id)
 }
 
 func (svc *UserService) UpdatePassword(ctx context.Context, user domain.User) error {

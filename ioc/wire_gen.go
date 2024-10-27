@@ -18,11 +18,12 @@ func InitGin() *gin.Engine {
 	tokenHandler := jwt.NewJwtHandler()
 	cmdable := InitRedis()
 	redisSession := jwt.NewRedisSession(cmdable)
-	handlerFunc := InitMiddleware(tokenHandler, redisSession)
-	db := InitDB()
+	logger := InitLogger()
+	v := InitMiddleware(tokenHandler, redisSession, logger)
+	db := InitDB(logger)
 	userHandler := InitUser(db, cmdable)
 	productHandler := InitProduct(db, cmdable)
-	engine := InitWeb(handlerFunc, userHandler, productHandler)
+	engine := InitWeb(v, userHandler, productHandler)
 	return engine
 }
 

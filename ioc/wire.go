@@ -14,6 +14,8 @@ func InitGin() *gin.Engine {
 	wire.Build(
 		BaseSet,
 
+		InitLogger,
+
 		auth.JWTSet,
 
 		InitUser,

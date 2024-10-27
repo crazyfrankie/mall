@@ -8,3 +8,4 @@ redis:
   addr: "localhost:8838"
   poolSize: 15
   minIdleConns: 5
+

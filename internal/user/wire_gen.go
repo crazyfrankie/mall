@@ -30,10 +30,11 @@ func InitUserHandler(db *gorm.DB, cmd redis.Cmdable) *web.UserHandler {
 	smsService := InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
 	tokenHandler := jwt.NewJwtHandler()
-	userHandler := web.NewUserHandler(userService, codeService, tokenHandler)
+	logger := InitLogger()
+	userHandler := web.NewUserHandler(userService, codeService, tokenHandler, logger)
 	return userHandler
 }
 
 // wire.go:
 
-var userSet = wire.NewSet(dao.NewUserDao, cache.NewUserCache, cache.NewCodeCache, repository.NewUserRepository, repository.NewCodeRepository, InitSMSService, service.NewUserService, service.NewCodeService, web.NewUserHandler)
+var userSet = wire.NewSet(dao.NewUserDao, cache.NewUserCache, cache.NewCodeCache, repository.NewUserRepository, repository.NewCodeRepository, InitSMSService, service.NewUserService, service.NewCodeService, InitLogger, web.NewUserHandler)

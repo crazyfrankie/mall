@@ -2,9 +2,9 @@ package jwt
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,17 +30,9 @@ func NewRedisSession(cmd redis.Cmdable) *RedisSession {
 func (s *RedisSession) CreateSession(ctx context.Context, user domain.User) (string, error) {
 	ssid := uuid.New().String()
 
-	sessionData := map[string]interface{}{
-		"name":     user.Name,
-		"password": user.Password,
-	}
+	key := s.key(user.IsMerchant, strconv.Itoa(int(user.Id)))
 
-	sessionDataBytes, err := json.Marshal(sessionData)
-	if err != nil {
-		return "", err
-	}
-
-	err = s.cmd.Set(ctx, ssid, sessionDataBytes, time.Hour*24*7).Err()
+	err := s.cmd.Set(ctx, key, ssid, time.Hour*24*7).Err()
 	if err != nil {
 		return "", err
 	}
@@ -48,17 +40,20 @@ func (s *RedisSession) CreateSession(ctx context.Context, user domain.User) (str
 	return ssid, nil
 }
 
-func (s *RedisSession) DeleteSession(ctx context.Context, ssid string) error {
+func (s *RedisSession) DeleteSession(ctx context.Context, isMerchant bool, id string) error {
+	key := s.key(isMerchant, id)
 	// 尝试删除 session，返回任何可能的错误
-	_, err := s.cmd.Del(ctx, ssid).Result()
+	_, err := s.cmd.Del(ctx, key).Result()
 	if err != nil {
-		return fmt.Errorf("failed to delete session %s: %w", ssid, err)
+		return fmt.Errorf("failed to delete session %s: %w", key, err)
 	}
 	return nil
 }
 
-func (s *RedisSession) AcquireSession(ctx context.Context, ssid string) error {
-	_, err := s.cmd.Get(ctx, ssid).Result()
+func (s *RedisSession) AcquireSession(ctx context.Context, isMerchant bool, id string) error {
+	key := s.key(isMerchant, id)
+
+	_, err := s.cmd.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return ErrKeyNotFound
@@ -70,7 +65,17 @@ func (s *RedisSession) AcquireSession(ctx context.Context, ssid string) error {
 	return nil
 }
 
-func (s *RedisSession) ExtendSession(ctx context.Context, ssid string) error {
-	_, err := s.cmd.Expire(ctx, ssid, time.Hour*1).Result()
+func (s *RedisSession) ExtendSession(ctx context.Context, isMerchant bool, id string) error {
+	key := s.key(isMerchant, id)
+
+	_, err := s.cmd.Expire(ctx, key, time.Hour*1).Result()
 	return err
+}
+
+func (s *RedisSession) key(isMerchant bool, id string) string {
+	if isMerchant {
+		return fmt.Sprintf("merchant:%s", id)
+	}
+
+	return fmt.Sprintf("user:%s", id)
 }

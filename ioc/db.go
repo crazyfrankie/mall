@@ -1,17 +1,19 @@
 package ioc
 
 import (
+	"mall/pkg/logger"
 	"time"
 
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	glogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 
 	"mall/internal/user/repository/dao"
 )
 
-func InitDB() *gorm.DB {
+func InitDB(l logger.Logger) *gorm.DB {
 	type Config struct {
 		DSN             string `yaml:"dsn"`
 		MaxIdleConns    int    `yaml:"maxIdleConns"`
@@ -32,6 +34,14 @@ func InitDB() *gorm.DB {
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // 表名不加s
 		},
+		Logger: glogger.New(gormLoggerFunc(l.Debug), glogger.Config{
+			// 慢查询阈值,只有执行时间超过这个阈值，才会使用
+			// 正常慢查询阈值为50ms，100ms
+			// SQL 查询要求命中索引，最好就是走一次磁盘 IO
+			// 一次磁盘 IO 是不到 10ms
+			SlowThreshold: time.Millisecond * 10,
+			LogLevel:      glogger.Info,
+		}),
 		// 可设置外键约束
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
@@ -57,4 +67,10 @@ func Migrate(db *gorm.DB) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+type gormLoggerFunc func(msg string, args ...logger.Field)
+
+func (g gormLoggerFunc) Printf(msg string, args ...interface{}) {
+	g(msg, logger.Field{Key: "args", Val: args})
 }

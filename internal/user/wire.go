@@ -27,6 +27,7 @@ var userSet = wire.NewSet(
 	service.NewUserService,
 	service.NewCodeService,
 
+	InitLogger,
 	web.NewUserHandler,
 )
 
