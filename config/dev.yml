@@ -5,7 +5,7 @@ mysql:
   connMaxLifeTime: 60
 
 redis:
-  addr: "localhost:8838"
+  addr: "localhost:6379"
   poolSize: 15
   minIdleConns: 5
 

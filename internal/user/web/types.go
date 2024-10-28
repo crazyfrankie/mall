@@ -1,5 +1,7 @@
 package web
 
+import "fmt"
+
 type Response struct {
 	Status int         `json:"status"`
 	Data   interface{} `json:"data"`
@@ -34,5 +36,22 @@ func WithData(data interface{}) func(*Response) {
 func WithMsg(msg string) func(*Response) {
 	return func(r *Response) {
 		r.Msg = msg
+	}
+}
+
+// BusinessError 定义错误类型
+type BusinessError struct {
+	Message string
+	Err     error
+}
+
+func (e *BusinessError) Error() string {
+	return fmt.Sprintf("%s: %v", e.Message, e.Err)
+}
+
+func NewBusinessError(message string, err error) *BusinessError {
+	return &BusinessError{
+		Message: message,
+		Err:     err,
 	}
 }
