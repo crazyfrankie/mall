@@ -29,34 +29,16 @@ func NewProductDao(db *gorm.DB) *ProductDao {
 }
 
 func (dao *ProductDao) InsertCategory(ctx context.Context, category domain.Category) error {
-	// 开启事务
-	tx := dao.db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	var existingCategory Category
-	if err := tx.WithContext(ctx).Where("name = ?", category.Name).First(&existingCategory).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback() // 查询出错则回滚事务
-			return err
-		}
-	} else {
-		tx.Rollback() // 如果用户已存在则回滚事务
-		return ErrCategoryDuplicateName
-	}
-
 	cg := Category{
 		Name: category.Name,
 	}
 	now := time.Now().UnixMilli()
 	cg.CreatedAt = now
 	cg.UpdatedAt = now
-	if err := tx.WithContext(ctx).Create(&cg).Error; err != nil {
-		tx.Rollback() // 插入失败则回滚事务
+	if err := dao.db.WithContext(ctx).Create(&cg).Error; err != nil {
 		return err
 	}
-	return tx.Commit().Error
+	return nil
 }
 
 func (dao *ProductDao) AcquireAllCategory(ctx context.Context) ([]domain.Category, error) {

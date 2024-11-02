@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 	"mall/internal/auth/jwt"
+	"mall/internal/product"
+	"mall/internal/user"
 )
 
 // Injectors from wire.go:
@@ -21,8 +23,8 @@ func InitGin() *gin.Engine {
 	logger := InitLogger()
 	v := InitMiddleware(tokenHandler, redisSession, logger)
 	db := InitDB(logger)
-	userHandler := InitUser(db, cmdable)
-	productHandler := InitProduct(db, cmdable)
+	userHandler := user.InitUserHandler(db, cmdable)
+	productHandler := product.InitProductHandler(db, cmdable)
 	engine := InitWeb(v, userHandler, productHandler)
 	return engine
 }

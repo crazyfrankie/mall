@@ -7,9 +7,9 @@ func String(key, val string) Field {
 	}
 }
 
-func Error(key string, val error) Field {
+func Error(err error) Field {
 	return Field{
-		Key: key,
-		Val: val,
+		Key: "error",
+		Val: err,
 	}
 }

@@ -4,13 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-
-	"mall/internal/user/domain"
 )
 
 var (
@@ -27,10 +24,10 @@ func NewRedisSession(cmd redis.Cmdable) *RedisSession {
 	}
 }
 
-func (s *RedisSession) CreateSession(ctx context.Context, user domain.User) (string, error) {
+func (s *RedisSession) CreateSession(ctx context.Context, isMerchant bool, id uint64) (string, error) {
 	ssid := uuid.New().String()
 
-	key := s.key(user.IsMerchant, strconv.Itoa(int(user.Id)))
+	key := s.key(isMerchant, id)
 
 	err := s.cmd.Set(ctx, key, ssid, time.Hour*24*7).Err()
 	if err != nil {
@@ -40,7 +37,7 @@ func (s *RedisSession) CreateSession(ctx context.Context, user domain.User) (str
 	return ssid, nil
 }
 
-func (s *RedisSession) DeleteSession(ctx context.Context, isMerchant bool, id string) error {
+func (s *RedisSession) DeleteSession(ctx context.Context, isMerchant bool, id uint64) error {
 	key := s.key(isMerchant, id)
 	// 尝试删除 session，返回任何可能的错误
 	_, err := s.cmd.Del(ctx, key).Result()
@@ -50,7 +47,7 @@ func (s *RedisSession) DeleteSession(ctx context.Context, isMerchant bool, id st
 	return nil
 }
 
-func (s *RedisSession) AcquireSession(ctx context.Context, isMerchant bool, id string) error {
+func (s *RedisSession) AcquireSession(ctx context.Context, isMerchant bool, id uint64) error {
 	key := s.key(isMerchant, id)
 
 	_, err := s.cmd.Get(ctx, key).Result()
@@ -65,17 +62,17 @@ func (s *RedisSession) AcquireSession(ctx context.Context, isMerchant bool, id s
 	return nil
 }
 
-func (s *RedisSession) ExtendSession(ctx context.Context, isMerchant bool, id string) error {
+func (s *RedisSession) ExtendSession(ctx context.Context, isMerchant bool, id uint64) error {
 	key := s.key(isMerchant, id)
 
 	_, err := s.cmd.Expire(ctx, key, time.Hour*1).Result()
 	return err
 }
 
-func (s *RedisSession) key(isMerchant bool, id string) string {
+func (s *RedisSession) key(isMerchant bool, id uint64) string {
 	if isMerchant {
-		return fmt.Sprintf("merchant:%s", id)
+		return fmt.Sprintf("merchant:%d", id)
 	}
 
-	return fmt.Sprintf("user:%s", id)
+	return fmt.Sprintf("user:%d", id)
 }

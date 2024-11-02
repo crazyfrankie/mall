@@ -31,7 +31,7 @@ func InitUserHandler(db *gorm.DB, cmd redis.Cmdable) *web.UserHandler {
 	codeService := service.NewCodeService(codeRepository, smsService)
 	tokenHandler := jwt.NewJwtHandler()
 	logger := InitLogger()
-	userHandler := web.NewUserHandler(userService, codeService, tokenHandler, logger)
+	userHandler := web.NewUserHandler(userService, codeService, tokenHandler, redisSession, logger)
 	return userHandler
 }
 

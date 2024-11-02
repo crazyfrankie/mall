@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 	"mall/internal/auth"
+	"mall/internal/product"
+	"mall/internal/user"
 )
 
 var BaseSet = wire.NewSet(InitRedis, InitDB)
@@ -18,9 +20,9 @@ func InitGin() *gin.Engine {
 
 		auth.JWTSet,
 
-		InitUser,
+		user.InitUserHandler,
 
-		InitProduct,
+		product.InitProductHandler,
 
 		InitMiddleware,
 

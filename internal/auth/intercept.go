@@ -66,7 +66,7 @@ func (b *TokenEffectiveBuilder) Check() gin.HandlerFunc {
 
 		// 检查 JWT 是否快过期，若是，则生成新 JWT
 		if time.Until(time.Unix(claims.ExpiresAt, 0)) < time.Minute*5 {
-			err := b.jwtHdl.GenerateToken(c, claims.SessionId, claims.IsMerchant)
+			err := b.jwtHdl.GenerateToken(c, claims.Id, claims.SessionId, claims.IsMerchant)
 			if err != nil {
 				c.AbortWithStatus(http.StatusBadRequest)
 				return

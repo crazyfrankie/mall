@@ -52,29 +52,6 @@ func (svc *UserService) FindOrCreateUser(ctx context.Context, phone string) (dom
 	return user, nil
 }
 
-func (svc *UserService) SetSession(ctx context.Context, phone string) (string, error) {
-	// 查找用户
-	user, err := svc.repo.FindByPhone(ctx, phone)
-	if err != nil {
-		return "", err
-	}
-	var ssid string
-	ssid, err = svc.sessHdl.CreateSession(ctx, user)
-	if err != nil {
-		return "", err
-	}
-
-	return ssid, nil
-}
-
-func (svc *UserService) DeleteSession(ctx context.Context, isMerchant bool, id string) error {
-	return svc.sessHdl.DeleteSession(ctx, isMerchant, id)
-}
-
-func (svc *UserService) ExtendSessionExpiration(ctx context.Context, isMerchant bool, id string) error {
-	return svc.sessHdl.ExtendSession(ctx, isMerchant, id)
-}
-
 func (svc *UserService) UpdatePassword(ctx context.Context, user domain.User) error {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
