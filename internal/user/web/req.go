@@ -1,13 +1,14 @@
 package web
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
+	"github.com/cloudwego/hertz/pkg/app"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-func WrapReq[T any](fn func(c *gin.Context, req T) (Response, error), errorHandler func(c *gin.Context, err error) (Response, bool)) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func WrapReq[T any](fn func(ctx context.Context, c *app.RequestContext, req T) (Response, error), errorHandler func(c *app.RequestContext, err error) (Response, bool)) app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		var req T
 		if err := c.Bind(&req); err != nil {
 			zap.L().Error("绑定信息错误", zap.Error(err))
@@ -15,7 +16,7 @@ func WrapReq[T any](fn func(c *gin.Context, req T) (Response, error), errorHandl
 			return
 		}
 
-		res, err := fn(c, req)
+		res, err := fn(ctx, c, req)
 		if err != nil {
 			// 调用特定错误处理函数
 			if response, handled := errorHandler(c, err); handled {

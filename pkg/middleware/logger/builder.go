@@ -3,7 +3,7 @@ package logger
 import (
 	"bytes"
 	"context"
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
 	"io"
 	"time"
 )
@@ -53,8 +53,8 @@ func (b *MiddlewareBuilder) AllowReqBodyLength(length int) *MiddlewareBuilder {
 	return b
 }
 
-func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (b *MiddlewareBuilder) Build() app.HandlerFunc {
+	return func(c *app.RequestContext) {
 		start := time.Now()
 		url := c.Request.URL.String()
 		if len(url) > b.allowUrlLength {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -32,7 +32,7 @@ func NewJwtHandler() *TokenHandler {
 	}
 }
 
-func (h *TokenHandler) GenerateToken(ctx *gin.Context, sessionId string, isMerchant bool) error {
+func (h *TokenHandler) GenerateToken(ctx *app.RequestContext, sessionId string, isMerchant bool) error {
 	claim := Claim{
 		SessionId:  sessionId,
 		IsMerchant: isMerchant,
@@ -47,7 +47,7 @@ func (h *TokenHandler) GenerateToken(ctx *gin.Context, sessionId string, isMerch
 	return err
 }
 
-func (h *TokenHandler) ExtractToken(ctx *gin.Context) string {
+func (h *TokenHandler) ExtractToken(ctx *app.RequestContext) string {
 	tokenHeader := ctx.GetHeader("Authorization")
 	// 分割并检查
 	parts := strings.Split(tokenHeader, " ")

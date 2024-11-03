@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
+	"github.com/cloudwego/hertz/pkg/app"
 	"mall/internal/auth/jwt"
 )
 
@@ -29,8 +28,8 @@ func (b *TokenEffectiveBuilder) IgnorePath(path string) *TokenEffectiveBuilder {
 	return b
 }
 
-func (b *TokenEffectiveBuilder) Check() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (b *TokenEffectiveBuilder) Check() app.HandlerFunc {
+	return func(c *app.RequestContext) {
 		if _, ok := b.paths[c.Request.URL.Path]; ok {
 			c.Next()
 			return

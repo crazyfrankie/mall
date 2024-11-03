@@ -1,8 +1,10 @@
 package web
 
 import (
+	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/app/server"
 	"mall/internal/product/domain"
 	"mall/internal/product/service"
 	"net/http"
@@ -18,7 +20,7 @@ func NewProductHandler(svc *service.ProductService) *ProductHandler {
 	}
 }
 
-func (ctl *ProductHandler) RegisterRoute(r *gin.Engine) {
+func (ctl *ProductHandler) RegisterRoute(r *server.Hertz) {
 	categoryGroup := r.Group("api/categories")
 	{
 		categoryGroup.POST("/", ctl.AddCategory())
@@ -36,8 +38,8 @@ func (ctl *ProductHandler) RegisterRoute(r *gin.Engine) {
 	}
 }
 
-func (ctl *ProductHandler) AddCategory() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) AddCategory() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		type Req struct {
 			Name string `json:"name"`
 		}
@@ -46,7 +48,7 @@ func (ctl *ProductHandler) AddCategory() gin.HandlerFunc {
 			return
 		}
 
-		err := ctl.svc.AddCategory(c.Request.Context(), domain.Category{
+		err := ctl.svc.AddCategory(ctx, domain.Category{
 			Name: req.Name,
 		})
 		switch {
@@ -62,9 +64,9 @@ func (ctl *ProductHandler) AddCategory() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) GetCategories() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		categories, err := ctl.svc.GetCategories(c.Request.Context())
+func (ctl *ProductHandler) GetCategories() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
+		categories, err := ctl.svc.GetCategories(ctx)
 		switch {
 		case errors.Is(err, service.ErrCategoriesNotFound):
 			c.JSON(http.StatusNotFound, GetResponse(WithStatus(http.StatusNotFound), WithMsg("no categories be found")))
@@ -78,8 +80,8 @@ func (ctl *ProductHandler) GetCategories() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) AddProduct() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) AddProduct() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		type Attribute struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
@@ -107,7 +109,7 @@ func (ctl *ProductHandler) AddProduct() gin.HandlerFunc {
 			})
 		}
 
-		err := ctl.svc.AddProduct(c.Request.Context(), domain.Product{
+		err := ctl.svc.AddProduct(ctx, domain.Product{
 			Name:        req.Name,
 			Description: req.Description,
 			Price:       req.Price,
@@ -127,11 +129,11 @@ func (ctl *ProductHandler) AddProduct() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) GetProductDetail() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) GetProductDetail() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		id := c.Param("id")
 
-		product, err := ctl.svc.GetProductDetail(c.Request.Context(), id)
+		product, err := ctl.svc.GetProductDetail(ctx, id)
 		switch {
 		case errors.Is(err, service.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, GetResponse(WithStatus(http.StatusNotFound), WithMsg("product not found")))
@@ -151,11 +153,11 @@ func (ctl *ProductHandler) GetProductDetail() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) SearchProducts() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) SearchProducts() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		name := c.Query("name")
 
-		products, err := ctl.svc.SearchProducts(c.Request.Context(), name)
+		products, err := ctl.svc.SearchProducts(ctx, name)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
 			return
@@ -165,11 +167,11 @@ func (ctl *ProductHandler) SearchProducts() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) DeleteProduct() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) DeleteProduct() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		id := c.Param("id")
 
-		err := ctl.svc.DeleteProduct(c.Request.Context(), id)
+		err := ctl.svc.DeleteProduct(ctx, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, GetResponse(WithStatus(http.StatusInternalServerError), WithMsg("system error")))
 			return
@@ -179,11 +181,11 @@ func (ctl *ProductHandler) DeleteProduct() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) ProductOnList() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) ProductOnList() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		id := c.Param("id")
 
-		err := ctl.svc.ProductOnList(c.Request.Context(), id)
+		err := ctl.svc.ProductOnList(ctx, id)
 		switch {
 		case errors.Is(err, service.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, GetResponse(WithStatus(http.StatusNotFound), WithMsg("product not found")))
@@ -197,11 +199,11 @@ func (ctl *ProductHandler) ProductOnList() gin.HandlerFunc {
 	}
 }
 
-func (ctl *ProductHandler) ProductRemoveList() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *ProductHandler) ProductRemoveList() app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
 		id := c.Param("id")
 
-		err := ctl.svc.ProductOnList(c.Request.Context(), id)
+		err := ctl.svc.ProductOnList(ctx, id)
 		switch {
 		case errors.Is(err, service.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, GetResponse(WithStatus(http.StatusNotFound), WithMsg("product not found")))

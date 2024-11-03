@@ -3,14 +3,14 @@
 package ioc
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/google/wire"
 	"mall/internal/auth"
 )
 
 var BaseSet = wire.NewSet(InitRedis, InitDB)
 
-func InitGin() *gin.Engine {
+func InitGin() *server.Hertz {
 	wire.Build(
 		BaseSet,
 

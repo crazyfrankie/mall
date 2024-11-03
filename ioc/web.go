@@ -2,7 +2,8 @@ package ioc
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/app/server"
 	"mall/internal/auth"
 	"mall/internal/auth/jwt"
 	"mall/internal/product"
@@ -11,8 +12,8 @@ import (
 	"mall/pkg/middleware/logger"
 )
 
-func InitWeb(mdl []gin.HandlerFunc, userHdl *user.Handler, productHdl *product.Handler) *gin.Engine {
-	server := gin.Default()
+func InitWeb(mdl []app.HandlerFunc, userHdl *user.Handler, productHdl *product.Handler) *server.Hertz {
+	server := server.Default()
 	server.Use(mdl...)
 	userHdl.RegisterRoute(server)
 	productHdl.RegisterRoute(server)
@@ -20,8 +21,8 @@ func InitWeb(mdl []gin.HandlerFunc, userHdl *user.Handler, productHdl *product.H
 	return server
 }
 
-func InitMiddleware(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession, l logger2.Logger) []gin.HandlerFunc {
-	return []gin.HandlerFunc{
+func InitMiddleware(jwtHdl *jwt.TokenHandler, sessionHdl *jwt.RedisSession, l logger2.Logger) []app.HandlerFunc {
+	return []app.HandlerFunc{
 		auth.NewTokenEffectiveBuilder(jwtHdl, sessionHdl).
 			IgnorePath("/api/user/send-code").
 			IgnorePath("/api/user/verify-code").

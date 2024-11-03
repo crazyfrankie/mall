@@ -1,7 +1,8 @@
 package web
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/app/server"
 	"mall/internal/cart/domain"
 	"mall/internal/cart/service"
 )
@@ -16,15 +17,15 @@ func NewCartHandler(svc *service.CartService) *CartHandler {
 	}
 }
 
-func (ctl *CartHandler) RegisterRoute(r *gin.Engine) {
+func (ctl *CartHandler) RegisterRoute(r *server.Hertz) {
 	cartGroup := r.Group("cart")
 	{
 		cartGroup.POST("add")
 	}
 }
 
-func (ctl *CartHandler) AddItem() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *CartHandler) AddItem() app.HandlerFunc {
+	return func(c *app.RequestContext) {
 		type Req struct {
 			ProductID uint64
 			Quantity  int
@@ -44,8 +45,8 @@ func (ctl *CartHandler) AddItem() gin.HandlerFunc {
 	}
 }
 
-func (ctl *CartHandler) AcquireAllItem() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (ctl *CartHandler) AcquireAllItem() app.HandlerFunc {
+	return func(c *app.RequestContext) {
 
 	}
 }
