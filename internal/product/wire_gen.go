@@ -28,6 +28,13 @@ func InitProductHandler(db *gorm.DB, cmd redis.Cmdable) *web.ProductHandler {
 	return productHandler
 }
 
+func NewProductRepository(db *gorm.DB, cmd redis.Cmdable) *repository.ProductRepository {
+	productDao := dao.NewProductDao(db)
+	productCache := cache.NewProductCache(cmd)
+	productRepository := repository.NewProductRepository(productDao, productCache)
+	return productRepository
+}
+
 // wire.go:
 
 var productSet = wire.NewSet(dao.NewProductDao, cache.NewProductCache, repository.NewProductRepository, service.NewProductService, web.NewProductHandler)

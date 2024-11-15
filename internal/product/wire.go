@@ -30,3 +30,12 @@ func InitProductHandler(db *gorm.DB, cmd redis.Cmdable) *web.ProductHandler {
 	)
 	return new(web.ProductHandler)
 }
+
+func NewProductRepository(db *gorm.DB, cmd redis.Cmdable) *repository.ProductRepository {
+	wire.Build(
+		dao.NewProductDao,
+		cache.NewProductCache,
+		repository.NewProductRepository,
+	)
+	return new(repository.ProductRepository)
+}

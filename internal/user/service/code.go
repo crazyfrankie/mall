@@ -24,6 +24,12 @@ const (
 	secretKey = "BgrTwHrRffd6LMXZWXGJCaKZHGb5p5h8"
 )
 
+type CodeRequest struct {
+	Receiver string `json:"receiver" validate:"required"`
+	Type     string `json:"type" validate:"required,oneof=sms email"`
+	Biz      string `json:"biz" validate:"required"`
+}
+
 type CodeService struct {
 	repo *repository.CodeRepository
 	sms  sms.Service

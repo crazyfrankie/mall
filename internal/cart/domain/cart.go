@@ -5,8 +5,3 @@ type CartItem struct {
 	Quantity  int
 	UserID    uint64
 }
-
-type ShoppingCart struct {
-	UserID uint64
-	Items  []CartItem
-}
